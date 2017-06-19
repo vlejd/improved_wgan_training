@@ -1,10 +1,12 @@
 import collections
 import numpy as np
-import re
 import glob
+import random
+
 
 def tokenize_string(sample):
     return tuple(sample.lower().split(' '))
+
 
 class NgramLanguageModel(object):
     def __init__(self, n, samples, tokenize=False):
@@ -25,7 +27,7 @@ class NgramLanguageModel(object):
     def ngrams(self):
         n = self._n
         for sample in self._samples:
-            for i in xrange(len(sample)-n+1):
+            for i in range(len(sample)-n+1):
                 yield sample[i:i+n]
 
     def unique_ngrams(self):
@@ -86,27 +88,25 @@ class NgramLanguageModel(object):
 
         return 0.5*(kl_p_m + kl_q_m) / np.log(2)
 
-def load_dataset(max_length, max_n_examples, tokenize=False, max_vocab_size=2048, data_dir='/home/ishaan/data/1-billion-word-language-modeling-benchmark-r13output'):
-    print "loading dataset..."
+
+def load_dataset(max_length, max_n_examples, data_dir, max_vocab_size=2048):
+    print("loading dataset...")
 
     lines = []
 
     finished = False
-
-    for path in glob.glob(data_dir+"/*"):
-        print(data_dir)
+    for path in sorted(glob.glob(data_dir.rstrip('/')+"/*")):
+        print("Loading: " + path)
+        print("Lines " + str(len(lines)))
         with open(path, 'r') as f:
             for line in f:
                 line = line[:-1]
-                if tokenize:
-                    line = tokenize_string(line)
-                else:
-                    line = tuple(line)
+                line = tuple(line)
 
                 if len(line) > max_length:
                     line = line[:max_length]
 
-                lines.append(line + ( ("`",)*(max_length-len(line)) ) )
+                lines.append(line + (("`",)*(max_length-len(line))))
 
                 if len(lines) == max_n_examples:
                     finished = True
@@ -114,18 +114,20 @@ def load_dataset(max_length, max_n_examples, tokenize=False, max_vocab_size=2048
         if finished:
             break
 
-    np.random.shuffle(lines)
-
+    random.shuffle(lines)
+    print("Shuffling done")
     import collections
     counts = collections.Counter(char for line in lines for char in line)
+    print("Counts done")
 
-    charmap = {'unk':0}
+    charmap = {'unk': 0}
     inv_charmap = ['unk']
 
-    for char,count in counts.most_common(max_vocab_size-1):
+    for char, count in counts.most_common(max_vocab_size-1):
         if char not in charmap:
             charmap[char] = len(inv_charmap)
             inv_charmap.append(char)
+    print("Filtered chars")
 
     filtered_lines = []
     for line in lines:
@@ -137,8 +139,6 @@ def load_dataset(max_length, max_n_examples, tokenize=False, max_vocab_size=2048
                 filtered_line.append('unk')
         filtered_lines.append(tuple(filtered_line))
 
-    for i in xrange(100):
-        print filtered_lines[i]
-
-    print "loaded {} lines in dataset".format(len(lines))
+    print("Filtered lines")
+    print("loaded {} lines in dataset".format(len(lines)))
     return filtered_lines, charmap, inv_charmap

@@ -1,5 +1,6 @@
 import os
-import sys
+import random
+import shutil
 import time
 import numpy as np
 import tensorflow as tf
@@ -8,32 +9,56 @@ import tflib as lib
 import tflib.ops.linear
 import tflib.ops.conv1d
 import tflib.plot
+import pprint
+# sys.path.append(os.getcwd())
+import argparse
 
-#sys.path.append(os.getcwd())
+parser = argparse.ArgumentParser(description='Run wgan with improved training on some texts.')
+parser.add_argument('data_dir', type=str,
+                    help='Directory with text. All files from this directory are used')
+parser.add_argument('output_dir', type=str,
+                    help='Directory for outputs. It will override everything that is there.')
+parser.add_argument('--batch_size', type=int, nargs='?', default=128,
+                    help='Batch size.')
+parser.add_argument('--iters', type=int, nargs='?', default=20000,
+                    help='Number of iterations.')
+parser.add_argument('--seq_len', type=int, nargs='?', default=32,
+                    help='Length of generated sequences.')
+parser.add_argument('--dim', type=int, nargs='?', default=500,
+                    help='Medels dimensionality. The same dimensionality is used almost everywhere. Default is usually too much.')
+parser.add_argument('--critiq_iters', type=int, nargs='?', default=20,
+                    help='Number of critique iterations per one generator.')
+parser.add_argument('--gradient_penalty', type=int, nargs='?', default=10,
+                    help='Gradient penalty (lambda).')
+parser.add_argument('--max_examples', type=int, nargs='?', default=10,
+                    help='Maximal number of training examples.')
+parser.add_argument('--ngram_data_size', type=int, nargs='?', default=1000000,
+                    help='Data used for ngrams training.')
+parser.add_argument('--ngram_size', type=int, nargs='?', default=3,
+                    help='Ngram size used for validation.')
 
+# DATA_DIR = '/media/vlejd/4BCEC8CA76426012/ML/data/1-billion-word-language-modeling-benchmark-r13output/small'
 
-# Download Google Billion Word at http://www.statmt.org/lm-benchmark/ and
-# fill in the path to the extracted files here!
-DATA_DIR = '/media/vlejd/4BCEC8CA76426012/ML/data/1-billion-word-language-modeling-benchmark-r13output/small'
-if len(DATA_DIR) == 0:
-    raise Exception('Please specify path to data directory in gan_language.py!')
+args = parser.parse_args()
+pprint.pprint(args)  # print settings
+DATA_DIR = args.data_dir
+BATCH_SIZE = args.batch_size
+ITERS = args.iters
+SEQ_LEN = args.seq_len
+DIM = args.dim
+CRITIC_ITERS = args.critiq_iters
+LAMBDA = args.gradient_penalty
+MAX_N_EXAMPLES = args.max_examples
+NGRAM_EXAMPLES = args.ngram_data_size
+OUTPUT_DIR = args.output_dir
+NGRAM_SIZE = args.ngram_size
 
-BATCH_SIZE = 10  # Batch size
-ITERS = 20000  # How many iterations to train for
-SEQ_LEN = 32  # Sequence length in characters
-DIM = 200  # Model dimensionality. This is fairly slow and overfits, even on
-# Billion Word. Consider decreasing for smaller datasets.
+if os.path.isdir(OUTPUT_DIR):
+    shutil.rmtree(OUTPUT_DIR)
 
-CRITIC_ITERS = 20  # How many critic iterations per generator iteration. We
-# use 10 for the results in the paper, but 5 should work fine
-# as well.
+os.makedirs(OUTPUT_DIR)
 
-LAMBDA = 10  # Gradient penalty lambda hyperparameter.
-MAX_N_EXAMPLES = 10000000  # Max number of data examples to load. If data loading
-# is too slow or takes too much RAM, you can decrease
-# this (at the expense of having less training data).
-
-lib.print_model_settings(locals().copy())
+tflib.plot.set_dir(OUTPUT_DIR)
 
 lines, charmap, inv_charmap = language_helpers.load_dataset(
     max_length=SEQ_LEN,
@@ -127,21 +152,36 @@ disc_train_op = tf.train.AdamOptimizer(learning_rate=1e-4, beta1=0.5, beta2=0.9)
 # Dataset iterator
 def inf_train_gen():
     while True:
-        np.random.shuffle(lines)
-        for i in xrange(0, len(lines)-BATCH_SIZE+1, BATCH_SIZE):
+        random.shuffle(lines)
+        for i in range(0, len(lines)-BATCH_SIZE+1, BATCH_SIZE):
             yield np.array(
                 [[charmap[c] for c in l] for l in lines[i:i+BATCH_SIZE]],
                 dtype='int32'
             )
 
+
+print('Validation')
+
 # During training we monitor JS divergence between the true & generated ngram
 # distributions for n=1,2,3,4. To get an idea of the optimal values, we
 # evaluate these statistics on a held-out set first.
-true_char_ngram_lms = [language_helpers.NgramLanguageModel(i+1, lines[10*BATCH_SIZE:], tokenize=False) for i in xrange(4)]
-validation_char_ngram_lms = [language_helpers.NgramLanguageModel(i+1, lines[:10*BATCH_SIZE], tokenize=False) for i in xrange(4)]
-for i in xrange(4):
-    print "validation set JSD for n={}: {}".format(i+1, true_char_ngram_lms[i].js_with(validation_char_ngram_lms[i]))
-true_char_ngram_lms = [language_helpers.NgramLanguageModel(i+1, lines, tokenize=False) for i in xrange(4)]
+true_char_ngram_lms = []
+for i in range(NGRAM_SIZE):
+    print("Training {0:d}-grams".format(i+1))
+    true_char_ngram_lms.append(
+        language_helpers.NgramLanguageModel(i+1, lines[:NGRAM_EXAMPLES][10*BATCH_SIZE:]))
+
+validation_char_ngram_lms = []
+for i in range(NGRAM_SIZE):
+    print("Validating {0:d}-grams".format(i+1))
+    validation_char_ngram_lms.append(
+        language_helpers.NgramLanguageModel(i+1, lines[:NGRAM_EXAMPLES][:10*BATCH_SIZE]))
+
+for i in range(NGRAM_SIZE):
+    print("validation set JSD for n={}: {}".format(
+        i+1, true_char_ngram_lms[i].js_with(validation_char_ngram_lms[i])))
+
+# true_char_ngram_lms = [language_helpers.NgramLanguageModel(i+1, lines) for i in range(4)]
 
 with tf.Session() as session:
     print("Session start")
@@ -151,16 +191,16 @@ with tf.Session() as session:
         samples = session.run(fake_inputs)
         samples = np.argmax(samples, axis=2)
         decoded_samples = []
-        for i in xrange(len(samples)):
+        for i in range(len(samples)):
             decoded = []
-            for j in xrange(len(samples[i])):
+            for j in range(len(samples[i])):
                 decoded.append(inv_charmap[samples[i][j]])
             decoded_samples.append(tuple(decoded))
         return decoded_samples
 
     gen = inf_train_gen()
 
-    for iteration in xrange(ITERS):
+    for iteration in range(ITERS):
         start_time = time.time()
 
         # Train generator
@@ -168,31 +208,32 @@ with tf.Session() as session:
             _ = session.run(gen_train_op)
 
         # Train critic
-        for i in xrange(CRITIC_ITERS):
+        for i in range(CRITIC_ITERS):
             _data = gen.next()
             _disc_cost, _ = session.run(
                 [disc_cost, disc_train_op],
                 feed_dict={real_inputs_discrete: _data}
             )
 
-        lib.plot.plot('time', time.time() - start_time)
-        lib.plot.plot('train disc cost', _disc_cost)
+        tflib.plot.plot('time', time.time() - start_time)
+        tflib.plot.plot('train disc cost', _disc_cost)
 
         if not iteration % 5:
             samples = []
-            for i in xrange(10):
+            for i in range(10):
                 samples.extend(generate_samples())
 
-            for i in xrange(4):
+            for i in range(NGRAM_SIZE):
                 lm = language_helpers.NgramLanguageModel(i+1, samples, tokenize=False)
-                lib.plot.plot('js{}'.format(i+1), lm.js_with(true_char_ngram_lms[i]))
+                tflib.plot.plot('js{}'.format(i+1), lm.js_with(true_char_ngram_lms[i]))
 
-            with open('samples_small/samples_{}.txt'.format(iteration), 'w') as f:
+            sample_dir = os.path.join(OUTPUT_DIR, 'samples_{}.txt'.format(iteration))
+            with open(sample_dir, 'w') as f:
                 for s in samples:
                     s = "".join(s)
                     f.write(s + "\n")
 
-        if iteration % 100 == 99:
-            lib.plot.flush()
+        if iteration % 10 == 9:
+            tflib.plot.flush()
 
-        lib.plot.tick()
+        tflib.plot.tick()

@@ -29,20 +29,12 @@ def unset_weights_stdev():
     _weights_stdev = None
 
 
-def Linear(
-        name,
-        input_dim,
-        output_dim,
-        inputs,
-        biases=True,
-        initialization=None,
-        weightnorm=None,
-        gain=1.
-        ):
+def Linear(name, input_dim, output_dim, inputs, biases=True, initialization=None, weightnorm=None,
+           gain=1.):
     """
     initialization: None, `lecun`, 'glorot', `he`, 'glorot_he', `orthogonal`, `("uniform", range)`
     """
-    with tf.name_scope(name) as scope:
+    with tf.name_scope(name):
 
         def uniform(stdev, size):
             if _weights_stdev is not None:

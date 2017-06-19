@@ -1,7 +1,14 @@
 Improved Training of Wasserstein GANs
 =====================================
 
-Code for reproducing experiments in ["Improved Training of Wasserstein GANs"](https://arxiv.org/abs/1704.00028).
+This is a project test Wasserstein GAN objectives on language. The code is built on a fork of [the popular project under the same title](https://github.com/igul222/improved_wgan_training).
+
+We try to reproduce results from their [paper](https://arxiv.org/abs/1704.00028). We clean their code for language generation, try smaller datasets, standard preprocessing and slightly different architectures.
+
+We striped a lot of unused code to better understand the code
+
+## Datasets
+You can download Download Google Billion Word at [http://www.statmt.org/lm-benchmark/] .
 
 
 ## Prerequisites
@@ -10,17 +17,4 @@ Code for reproducing experiments in ["Improved Training of Wasserstein GANs"](ht
 - A recent NVIDIA GPU
 
 ## Models
-
-Configuration for all models is specified in a list of constants at the top of
-the file. Two models should work "out of the box":
-
-- `python gan_toy.py`: Toy datasets (8 Gaussians, 25 Gaussians, Swiss Roll). 
-- `python gan_mnist.py`: MNIST
-
-For the other models, edit the file to specify the path to the dataset in
-`DATA_DIR` before running. Each model's dataset is publicly available; the
-download URL is in the file.
-
-- `python gan_64x64.py`: 64x64 architectures (this code trains on ImageNet instead of LSUN bedrooms in the paper)
-- `python gan_language.py`: Character-level language model
-- `python gan_cifar.py`: CIFAR-10
+Most important is `python gan_language.py`: Character-level language model. It has help.
