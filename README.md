@@ -5,7 +5,7 @@ This is a project test Wasserstein GAN objectives on language. The code is built
 
 We try to reproduce results from their [paper](https://arxiv.org/abs/1704.00028). We clean their code for language generation, try smaller datasets, standard preprocessing and slightly different architectures.
 
-We striped a lot of unused code to better understand the code
+We striped a lot of unused code to better understand the rest.
 
 ## Datasets
 You can download Download Google Billion Word at [http://www.statmt.org/lm-benchmark/] .
@@ -16,5 +16,7 @@ You can download Download Google Billion Word at [http://www.statmt.org/lm-bench
 - Python, NumPy, TensorFlow, SciPy, Matplotlib
 - A recent NVIDIA GPU
 
-## Models
-Most important is `python gan_language.py`: Character-level language model. It has help.
+## Important files
+Most important is `python gan_language.py`: Character-level language model. It has help. Specify directory ith
+`Improved WGAN.ipynb` : jupyter notebook with my attemt to code it in keras.
+`Improved WGAN.py` : `Improved WGAN.ipynb` exported to pure python script.

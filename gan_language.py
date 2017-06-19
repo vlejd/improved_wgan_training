@@ -1,3 +1,4 @@
+import json
 import os
 import random
 import shutil
@@ -20,7 +21,7 @@ parser.add_argument('output_dir', type=str,
                     help='Directory for outputs. It will override everything that is there.')
 parser.add_argument('--batch_size', type=int, nargs='?', default=128,
                     help='Batch size.')
-parser.add_argument('--iters', type=int, nargs='?', default=20000,
+parser.add_argument('--iters', type=int, nargs='?', default=2000,
                     help='Number of iterations.')
 parser.add_argument('--seq_len', type=int, nargs='?', default=32,
                     help='Length of generated sequences.')
@@ -30,17 +31,19 @@ parser.add_argument('--critiq_iters', type=int, nargs='?', default=20,
                     help='Number of critique iterations per one generator.')
 parser.add_argument('--gradient_penalty', type=int, nargs='?', default=10,
                     help='Gradient penalty (lambda).')
-parser.add_argument('--max_examples', type=int, nargs='?', default=10,
+parser.add_argument('--max_examples', type=int, nargs='?', default=1000000,
                     help='Maximal number of training examples.')
 parser.add_argument('--ngram_data_size', type=int, nargs='?', default=1000000,
                     help='Data used for ngrams training.')
-parser.add_argument('--ngram_size', type=int, nargs='?', default=3,
+parser.add_argument('--ngram_size', type=int, nargs='?', default=4,
                     help='Ngram size used for validation.')
 
 # DATA_DIR = '/media/vlejd/4BCEC8CA76426012/ML/data/1-billion-word-language-modeling-benchmark-r13output/small'
 
 args = parser.parse_args()
-pprint.pprint(args)  # print settings
+arg_dict = vars(args)
+pprint.pprint(arg_dict)  # print settings
+
 DATA_DIR = args.data_dir
 BATCH_SIZE = args.batch_size
 ITERS = args.iters
@@ -57,6 +60,8 @@ if os.path.isdir(OUTPUT_DIR):
     shutil.rmtree(OUTPUT_DIR)
 
 os.makedirs(OUTPUT_DIR)
+
+json.dump(arg_dict, open(os.path.join(OUTPUT_DIR, 'args.json'), "w"))
 
 tflib.plot.set_dir(OUTPUT_DIR)
 
