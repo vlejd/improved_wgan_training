@@ -1,35 +1,37 @@
-import os, sys
-sys.path.append(os.getcwd())
-
+import os
+import sys
 import time
-
 import numpy as np
 import tensorflow as tf
-
 import language_helpers
 import tflib as lib
 import tflib.ops.linear
 import tflib.ops.conv1d
 import tflib.plot
 
+#sys.path.append(os.getcwd())
+
+
 # Download Google Billion Word at http://www.statmt.org/lm-benchmark/ and
 # fill in the path to the extracted files here!
-DATA_DIR = ''
+DATA_DIR = '/media/vlejd/4BCEC8CA76426012/ML/data/1-billion-word-language-modeling-benchmark-r13output/small'
 if len(DATA_DIR) == 0:
     raise Exception('Please specify path to data directory in gan_language.py!')
 
-BATCH_SIZE = 64 # Batch size
-ITERS = 200000 # How many iterations to train for
-SEQ_LEN = 32 # Sequence length in characters
-DIM = 512 # Model dimensionality. This is fairly slow and overfits, even on
-          # Billion Word. Consider decreasing for smaller datasets.
-CRITIC_ITERS = 10 # How many critic iterations per generator iteration. We
-                  # use 10 for the results in the paper, but 5 should work fine
-                  # as well.
-LAMBDA = 10 # Gradient penalty lambda hyperparameter.
-MAX_N_EXAMPLES = 10000000 # Max number of data examples to load. If data loading
-                          # is too slow or takes too much RAM, you can decrease
-                          # this (at the expense of having less training data).
+BATCH_SIZE = 10  # Batch size
+ITERS = 20000  # How many iterations to train for
+SEQ_LEN = 32  # Sequence length in characters
+DIM = 200  # Model dimensionality. This is fairly slow and overfits, even on
+# Billion Word. Consider decreasing for smaller datasets.
+
+CRITIC_ITERS = 20  # How many critic iterations per generator iteration. We
+# use 10 for the results in the paper, but 5 should work fine
+# as well.
+
+LAMBDA = 10  # Gradient penalty lambda hyperparameter.
+MAX_N_EXAMPLES = 10000000  # Max number of data examples to load. If data loading
+# is too slow or takes too much RAM, you can decrease
+# this (at the expense of having less training data).
 
 lib.print_model_settings(locals().copy())
 
@@ -39,6 +41,7 @@ lines, charmap, inv_charmap = language_helpers.load_dataset(
     data_dir=DATA_DIR
 )
 
+
 def softmax(logits):
     return tf.reshape(
         tf.nn.softmax(
@@ -47,8 +50,10 @@ def softmax(logits):
         tf.shape(logits)
     )
 
+
 def make_noise(shape):
     return tf.random_normal(shape)
+
 
 def ResBlock(name, inputs):
     output = inputs
@@ -58,7 +63,9 @@ def ResBlock(name, inputs):
     output = lib.ops.conv1d.Conv1D(name+'.2', DIM, DIM, 5, output)
     return inputs + (0.3*output)
 
+
 def Generator(n_samples, prev_outputs=None):
+    print("Generator")
     output = make_noise(shape=[n_samples, 128])
     output = lib.ops.linear.Linear('Generator.Input', 128, SEQ_LEN*DIM, output)
     output = tf.reshape(output, [-1, DIM, SEQ_LEN])
@@ -72,8 +79,9 @@ def Generator(n_samples, prev_outputs=None):
     output = softmax(output)
     return output
 
+
 def Discriminator(inputs):
-    output = tf.transpose(inputs, [0,2,1])
+    output = tf.transpose(inputs, [0, 2, 1])
     output = lib.ops.conv1d.Conv1D('Discriminator.Input', len(charmap), DIM, 1, output)
     output = ResBlock('Discriminator.1', output)
     output = ResBlock('Discriminator.2', output)
@@ -84,12 +92,13 @@ def Discriminator(inputs):
     output = lib.ops.linear.Linear('Discriminator.Output', SEQ_LEN*DIM, 1, output)
     return output
 
+
 real_inputs_discrete = tf.placeholder(tf.int32, shape=[BATCH_SIZE, SEQ_LEN])
 real_inputs = tf.one_hot(real_inputs_discrete, len(charmap))
 fake_inputs = Generator(BATCH_SIZE)
 fake_inputs_discrete = tf.argmax(fake_inputs, fake_inputs.get_shape().ndims-1)
 
-disc_real = Discriminator(real_inputs) 
+disc_real = Discriminator(real_inputs)
 disc_fake = Discriminator(fake_inputs)
 
 disc_cost = tf.reduce_mean(disc_fake) - tf.reduce_mean(disc_real)
@@ -97,14 +106,14 @@ gen_cost = -tf.reduce_mean(disc_fake)
 
 # WGAN lipschitz-penalty
 alpha = tf.random_uniform(
-    shape=[BATCH_SIZE,1,1], 
+    shape=[BATCH_SIZE, 1, 1],
     minval=0.,
     maxval=1.
 )
 differences = fake_inputs - real_inputs
 interpolates = real_inputs + (alpha*differences)
 gradients = tf.gradients(Discriminator(interpolates), [interpolates])[0]
-slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1,2]))
+slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1, 2]))
 gradient_penalty = tf.reduce_mean((slopes-1.)**2)
 disc_cost += LAMBDA*gradient_penalty
 
@@ -114,13 +123,14 @@ disc_params = lib.params_with_name('Discriminator')
 gen_train_op = tf.train.AdamOptimizer(learning_rate=1e-4, beta1=0.5, beta2=0.9).minimize(gen_cost, var_list=gen_params)
 disc_train_op = tf.train.AdamOptimizer(learning_rate=1e-4, beta1=0.5, beta2=0.9).minimize(disc_cost, var_list=disc_params)
 
+
 # Dataset iterator
 def inf_train_gen():
     while True:
         np.random.shuffle(lines)
         for i in xrange(0, len(lines)-BATCH_SIZE+1, BATCH_SIZE):
             yield np.array(
-                [[charmap[c] for c in l] for l in lines[i:i+BATCH_SIZE]], 
+                [[charmap[c] for c in l] for l in lines[i:i+BATCH_SIZE]],
                 dtype='int32'
             )
 
@@ -134,7 +144,7 @@ for i in xrange(4):
 true_char_ngram_lms = [language_helpers.NgramLanguageModel(i+1, lines, tokenize=False) for i in xrange(4)]
 
 with tf.Session() as session:
-
+    print("Session start")
     session.run(tf.initialize_all_variables())
 
     def generate_samples():
@@ -162,13 +172,13 @@ with tf.Session() as session:
             _data = gen.next()
             _disc_cost, _ = session.run(
                 [disc_cost, disc_train_op],
-                feed_dict={real_inputs_discrete:_data}
+                feed_dict={real_inputs_discrete: _data}
             )
 
         lib.plot.plot('time', time.time() - start_time)
         lib.plot.plot('train disc cost', _disc_cost)
 
-        if iteration % 100 == 99:
+        if not iteration % 5:
             samples = []
             for i in xrange(10):
                 samples.extend(generate_samples())
@@ -177,12 +187,12 @@ with tf.Session() as session:
                 lm = language_helpers.NgramLanguageModel(i+1, samples, tokenize=False)
                 lib.plot.plot('js{}'.format(i+1), lm.js_with(true_char_ngram_lms[i]))
 
-            with open('samples_{}.txt'.format(iteration), 'w') as f:
+            with open('samples_small/samples_{}.txt'.format(iteration), 'w') as f:
                 for s in samples:
                     s = "".join(s)
                     f.write(s + "\n")
 
         if iteration % 100 == 99:
             lib.plot.flush()
-        
+
         lib.plot.tick()
