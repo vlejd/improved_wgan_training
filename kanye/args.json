@@ -1,1 +1,1 @@
-{"dim": 200, "data_dir": "data/kanye", "iters": 500, "ngram_data_size": 1000000, "gradient_penalty": 10, "batch_size": 128, "ngram_size": 4, "critiq_iters": 20, "output_dir": "kanye", "seq_len": 32, "max_examples": 1000000}
+{"dim": 200, "data_dir": "data/kanye", "iters": 1000, "ngram_data_size": 1000000, "gradient_penalty": 10, "batch_size": 128, "ngram_size": 4, "critiq_iters": 20, "output_dir": "kanye", "seq_len": 32, "max_examples": 1000000}

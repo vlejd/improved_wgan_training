@@ -9,7 +9,7 @@ We striped a lot of unused code to better understand the rest.
 
 ## Datasets
 You can download Download Google Billion Word at [http://www.statmt.org/lm-benchmark/] .
-
+Other datasets are available at [https://drive.google.com/drive/folders/0B7MLuc1jq3A8eFpVWUZ0eDEwdlE?usp=sharing]
 
 ## Prerequisites
 
@@ -20,3 +20,4 @@ You can download Download Google Billion Word at [http://www.statmt.org/lm-bench
 Most important is `python gan_language.py`: Character-level language model. It has help. Specify directory ith
 `Improved WGAN.ipynb` : jupyter notebook with my attemt to code it in keras.
 `Improved WGAN.py` : `Improved WGAN.ipynb` exported to pure python script.
+directories `cuted`, `cuted_small` `kanye` `quora` and `romeo` contains graphs for given datasets and some sample generated texts.

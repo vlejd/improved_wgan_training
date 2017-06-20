@@ -295,6 +295,7 @@ Je krásne vidno ako si model postupne začal uvedomovať, čo musí byť na za�
 Tento dataset je z kagglovej súťaže "Quora question pairs".
 Tieto dát boli jemne predspracované, boli lowercasnotú a boli z nich odstránené niektoré nealfanumerické znaky. 
 
+Reálne dáta
 \begin{verbatim}
 how does the surface pro himself
 should i have a hair transplant 
@@ -302,12 +303,44 @@ what but is the best way to send
 which food not emulsifiers ?
 \end{verbatim}
 
+Generované dáta po $995$  epochách.
 \begin{verbatim}
-what iee he ehe  anw anoi mnoe t
-what aho s oan ant ln law rt iro
-what is ihe terthent8eetsacfteei
-what msmihethinc aren ina miteie
+what menelicaca mbust is do penv
+is ntare she fet if boel sha `or
+what is is rrand pheples erd ft 
+is t ane the e wenticonirhap a o
 \end{verbatim}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.4\textwidth}
+        \includegraphics[width=\textwidth]{quora/js1}
+        \caption{$1$-gram}
+    \end{subfigure}
+    ~ 
+    \begin{subfigure}[b]{0.4\textwidth}
+        \includegraphics[width=\textwidth]{quora/js2}
+        \caption{$2$-gram}
+    \end{subfigure}
+    
+    \begin{subfigure}[b]{0.4\textwidth}
+        \includegraphics[width=\textwidth]{quora/js3}
+        \caption{$3$-gram}
+    \end{subfigure}
+    ~ 
+    \begin{subfigure}[b]{0.4\textwidth}
+        \includegraphics[width=\textwidth]{quora/js4}
+        \caption{$4$-gram}
+    \end{subfigure}
+    \caption{JS divergencia oproti $n$-gramom (quora)}\label{fig:animals}
+\end{figure}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.5\textwidth]{quora/train_disc_cost}
+    \caption{Chyba diskriminátora (quora) }
+\end{figure}
+
+Boli sme sklamaný, že sa model nenaučil používať otázniky.
 
 
 \subsection{Kanye}
@@ -315,8 +348,61 @@ Keďže výsledky nášho modelu boli celkom dobré, ale pre potreby bežnej re�
 
 Tento dataset mal len $6554$ riadkov a preto dúfame, že na ňom bude mať generátor naozaj dobré výsledky.
 
+Reálne dáta
+\begin{verbatim}
+Throw 'em some Maybach keys
+Fuck it, c'est la vie
+I know that we the new slaves
+Y'all niggas can't fuck with me
+\end{verbatim}
 
+Generované dáta po $995$  epochách.
+\begin{verbatim}
+Ane thene shesp saike, uite ayn 
+Low, n'lfin, r````````sI n'e ```
+Thet aour`d utoe byc`e``````````
+TTmey betlino no hask athe the y
+\end{verbatim}
 
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.4\textwidth}
+        \includegraphics[width=\textwidth]{kanye/js1}
+        \caption{$1$-gram}
+    \end{subfigure}
+    ~ 
+    \begin{subfigure}[b]{0.4\textwidth}
+        \includegraphics[width=\textwidth]{kanye/js2}
+        \caption{$2$-gram}
+    \end{subfigure}
+    
+    \begin{subfigure}[b]{0.4\textwidth}
+        \includegraphics[width=\textwidth]{kanye/js3}
+        \caption{$3$-gram}
+    \end{subfigure}
+    ~ 
+    \begin{subfigure}[b]{0.4\textwidth}
+        \includegraphics[width=\textwidth]{kanye/js4}
+        \caption{$4$-gram}
+    \end{subfigure}
+    \caption{JS divergencia oproti $n$-gramom (kanye)}\label{fig:animals}
+\end{figure}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.5\textwidth]{kanye/train_disc_cost}
+    \caption{Chyba diskriminátora (kanye) }
+\end{figure}
+
+Na týchto dátach sa nám prvý krát stalo, že aj po $1000$ epochách text obsahoval slová zložené len z artefaktov (apostrofov).
+
+\section{Vyhodnotenie}
+Aj keď sa nám z časových a výpočtových dôvodov nepodarilo presne replikovať kvalitu výsledkov v článku, podarilo sa nám ich replikovať aspoň do relatívne veľkej miery.
+Okrem toho sa nám podarilo upraviť kód z článku tak, aby bol prístupnejší pre ľudí, ktorý by s ním chceli robiť ďalšie experimenty.
+
+Presvedčili sme sa, že WGAN architektúra sa dokáže naučiť naučiť niektoré aspekty jazyka a že so zlepšeným trénovaním relatívne rýchlo konverguje.
+
+V článku sa pri obrázkových dátach spomína, že krivka chyby diskriminátora zodpovedá kvalite vygenerovaných dát. 
+V našom prípade tak bolo len do prvých $400$ epôch. Následne sa síce podľa $n$-gramov náš model stále zlepšoval, no chyba diskriminátora už toto zlepšovanie zachytávala len málo.
 
 \section{PC špecifikácia}
 Experimenty som bečal na osobnom notebooku lenovo Y 700, procesor Intel(R) Core(TM) i7-6700HQ CPU @ 2.60GHz, graficka karta GM107M [GeForce GTX 960M] 4GB, 16GB operačná pamäť.

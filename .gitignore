@@ -1,6 +1,6 @@
 .DS_Store
 push
-
+*/samples_*.txt
 *.pyc
 *.pkl
 *.jpg
